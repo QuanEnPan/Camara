@@ -1,5 +1,9 @@
 package com.example.q.camara.Statistics;
 
+import android.annotation.TargetApi;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
@@ -9,7 +13,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v7.widget.RecyclerView;
+import android.widget.Toast;
 
+import com.example.q.camara.MessageID;
 import com.example.q.camara.R;
 
 import org.json.JSONArray;
@@ -27,6 +33,7 @@ public class StatisticsActivity extends ActionBarActivity {
     RecyclerView recyclerView;
     Handler h;
     HttpThread thread1;
+    List<StatisticsInfo> statisticsInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,84 +42,41 @@ public class StatisticsActivity extends ActionBarActivity {
 
         recyclerView = (RecyclerView) findViewById(R.id.rView_statistics);
 
-        List<StatisticsInfo> statisticsInfo = new ArrayList<>();
-
-
+        statisticsInfo = new ArrayList<>();
+//
 //        {"data":[
 //            {"data":"03\/30\/03","opponent":"QuanEn","winner":true},
 //            {"data":"03\/30\/04","opponent":"Jordi","winner":false}
 //            ]
 //        }
 
-        JSONObject object = new JSONObject();
-        try {
-            object.put("winner",true);
-            object.put("opponent","QuanEn");
-            object.put("date","03/30/03");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        h = new Handler(){
+            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+                switch (msg.what){
+                    case MessageID.GET_SUCCESSFUL:
+                        Bundle bundle;
+                        bundle = msg.getData();
 
-        JSONObject object2 = new JSONObject();
-        try {
-            object2.put("winner",false);
-            object2.put("opponent","Jordi");
-            object2.put("date","03/30/04");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+                        try {
+                            fillStatistics(bundle.getString("json","N?A"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        break;
 
-        JSONArray jsonArray = new JSONArray();
-        jsonArray.put(object);
-        jsonArray.put(object2);
-
-        JSONObject obj=new JSONObject();
-        try {
-            obj.put("data",jsonArray);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-
-        try {
-            JSONArray jsonArray1 = obj.getJSONArray("data");
-            for(int i=0; i<jsonArray1.length(); i++){
-                JSONObject jsonObject = (JSONObject) jsonArray.get(i);
-                String opponent = jsonObject.get("opponent").toString();
-                String date = jsonObject.get("date").toString();
-                Boolean isWon = jsonObject.getBoolean("winner");
-
-                statisticsInfo.add(new StatisticsInfo(opponent,date,isWon));
+                    case MessageID.GET_FAILED:
+                        Toast.makeText(getApplicationContext(), "Get Failed", Toast.LENGTH_LONG).show();
+                }
+                String s = (String)msg.obj;
+                Log.e("++++", "-------"+s);
             }
+        };
 
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-//
-//        JSONObject obj2=new JSONObject();
-//        try {
-//            obj2.put("obj",obj);
-//        } catch (JSONException e) {
-//            e.printStackTrace();
-//        }
-//
-//        try {
-//            System.out.println(obj2.getJSONArray("obj"));
-//        } catch (JSONException e) {
-//            e.printStackTrace();
-//        }
-
-//        h = new Handler(){
-//            @Override
-//            public void handleMessage(Message msg) {
-//                super.handleMessage(msg);
-//                String s = (String)msg.obj;
-//                Log.e("++++", "-------"+s);
-//            }
-//        };
-//        thread1 = new HttpThread("GET","users/1/games",null,h);
-//        thread1.start();
+        thread1 = new HttpThread("GET","users/55689f16dcc442e41b840281/games",null,h,this);
+        thread1.start();
 
         /*statisticsInfo.add(new StatisticsInfo("H","1",false));
         statisticsInfo.add(new StatisticsInfo("E","2",true));
@@ -131,7 +95,6 @@ public class StatisticsActivity extends ActionBarActivity {
 
 
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -153,5 +116,42 @@ public class StatisticsActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void fillStatistics(String json) throws JSONException {
+        SharedPreferences sharedPreferences = getSharedPreferences("Data", Context.MODE_PRIVATE);
+        String user = sharedPreferences.getString("email","A?N");
+
+//        JSONObject jsonObject = new JSONObject(json);
+
+        System.out.println("hhhhhh");
+
+        JSONObject jsonObject = new JSONObject(json);
+//        JSONObject jsonObject1 = jsonObject.getJSONObject("data");
+//
+//        System.out.println(jsonObject1+" jjjjj");
+
+        JSONArray jsonArray = jsonObject.getJSONArray("data");
+
+        System.out.println(jsonArray+" kkkkk");
+
+        for(int i=0; i<jsonArray.length(); i++){
+
+            JSONObject jsonObject2 = (JSONObject) jsonArray.get(i);
+            System.out.println(jsonObject2);
+
+            String loser = (String) jsonObject2.get("loser");
+            String winner = (String) jsonObject2.get("winner");
+
+            String initDate = (String) jsonObject2.get("initDate");
+//            String _id = (String) jsonObject2.get("_id");
+
+            if(loser.equals(user)){
+                statisticsInfo.add(new StatisticsInfo("opponent: "+winner,"Date: "+initDate,false));
+            }else
+                statisticsInfo.add(new StatisticsInfo("opponent: "+loser,"Date: "+initDate,true));
+
+//            System.out.println("initDate: "+initDate+"  _id: "+_id+" user: "+user);
+        }
     }
 }
