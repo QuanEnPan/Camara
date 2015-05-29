@@ -12,6 +12,11 @@ import android.support.v7.widget.RecyclerView;
 
 import com.example.q.camara.R;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,16 +36,83 @@ public class StatisticsActivity extends ActionBarActivity {
         recyclerView = (RecyclerView) findViewById(R.id.rView_statistics);
 
         List<StatisticsInfo> statisticsInfo = new ArrayList<>();
-        h = new Handler(){
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-                String s = (String)msg.obj;
-                Log.e("++++", "-------"+s);
+
+
+//        {"data":[
+//            {"data":"03\/30\/03","opponent":"QuanEn","winner":true},
+//            {"data":"03\/30\/04","opponent":"Jordi","winner":false}
+//            ]
+//        }
+
+        JSONObject object = new JSONObject();
+        try {
+            object.put("winner",true);
+            object.put("opponent","QuanEn");
+            object.put("date","03/30/03");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JSONObject object2 = new JSONObject();
+        try {
+            object2.put("winner",false);
+            object2.put("opponent","Jordi");
+            object2.put("date","03/30/04");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.put(object);
+        jsonArray.put(object2);
+
+        JSONObject obj=new JSONObject();
+        try {
+            obj.put("data",jsonArray);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+        try {
+            JSONArray jsonArray1 = obj.getJSONArray("data");
+            for(int i=0; i<jsonArray1.length(); i++){
+                JSONObject jsonObject = (JSONObject) jsonArray.get(i);
+                String opponent = jsonObject.get("opponent").toString();
+                String date = jsonObject.get("date").toString();
+                Boolean isWon = jsonObject.getBoolean("winner");
+
+                statisticsInfo.add(new StatisticsInfo(opponent,date,isWon));
             }
-        };
-        thread1 = new HttpThread("GET","users/1/games",null,h);
-        thread1.start();
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+//
+//        JSONObject obj2=new JSONObject();
+//        try {
+//            obj2.put("obj",obj);
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//
+//        try {
+//            System.out.println(obj2.getJSONArray("obj"));
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+
+//        h = new Handler(){
+//            @Override
+//            public void handleMessage(Message msg) {
+//                super.handleMessage(msg);
+//                String s = (String)msg.obj;
+//                Log.e("++++", "-------"+s);
+//            }
+//        };
+//        thread1 = new HttpThread("GET","users/1/games",null,h);
+//        thread1.start();
 
         /*statisticsInfo.add(new StatisticsInfo("H","1",false));
         statisticsInfo.add(new StatisticsInfo("E","2",true));

@@ -247,7 +247,7 @@ public class GameActivity extends ActionBarActivity implements SensorEventListen
                 output.writeObject(tauler);
                 player1.setIsMyTurn(false);
             }
-            Log.e("-------------------nMoves------------------", "nomves = "+nMoves + " size lnumbers " + tauler.getTauler().size());
+//            Log.e("-------------------nMoves------------------", "nomves = "+nMoves + " size lnumbers " + tauler.getTauler().size());
 
 
         }
